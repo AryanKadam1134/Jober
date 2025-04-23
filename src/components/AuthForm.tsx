@@ -82,15 +82,6 @@ const AuthForm = () => {
         if (error) throw error;
         toast.success("Signed in successfully!");
       } else {
-        console.log("Signing up with:", {
-          email: form.email,
-          password: form.password,
-          metadata: {
-            full_name: form.full_name,
-            role: form.role,
-          }
-        });
-        
         const { error } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,
@@ -103,12 +94,12 @@ const AuthForm = () => {
         });
         
         if (error) throw error;
-        toast.success("Account created successfully! Please check your email for verification.");
+        toast.success("Account created successfully!");
       }
     } catch (err: any) {
       console.error("Auth error:", err);
-      setError(err.message);
-      toast.error(err.message);
+      setError(err.message || "An error occurred during authentication");
+      toast.error(err.message || "Authentication failed");
     } finally {
       setLoading(false);
     }
