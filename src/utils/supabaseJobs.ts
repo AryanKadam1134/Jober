@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // List jobs with basic search/filter
@@ -11,16 +10,18 @@ export async function getJobs(filter: {
 }) {
   let q = supabase
     .from("jobs")
-    .select(
-      `id, title, description, location, job_type, salary_min, salary_max, deadline, 
-        company:company_id (name), category:category_id (name)`
-    )
+    .select(`
+      *,
+      company:companies(name),
+      category:categories(name)
+    `)
     .eq("is_active", true);
+
   if (filter.query) q = q.ilike("title", `%${filter.query}%`);
-  if (filter.category) q = q.ilike("category_id", `%${filter.category}%`);
+  if (filter.category) q = q.eq("category_id", filter.category);
   if (filter.location) q = q.ilike("location", `%${filter.location}%`);
   if (filter.jobType) q = q.eq("job_type", filter.jobType);
-  // salary and additional filters can be added here
+
   const { data, error } = await q.order("created_at", { ascending: false });
   if (error) throw error;
   return data || [];
@@ -36,18 +37,22 @@ export async function createOrUpdateJob(payload: any, id?: string) {
     salary_min: payload.salary_min ? Number(payload.salary_min) : null,
     salary_max: payload.salary_max ? Number(payload.salary_max) : null,
     deadline: payload.deadline,
-    company_id: payload.company, // Should actually resolve to company id
-    category_id: payload.category, // Should actually resolve to category id
+    company_id: payload.company_id,
+    category_id: payload.category_id,
     is_active: true,
   };
-  let res;
-  if (id) {
-    res = await supabase.from("jobs").update(data).eq("id", id);
-  } else {
-    res = await supabase.from("jobs").insert(data);
+
+  if (!data.title || !data.description || !data.location || !data.job_type || 
+      !data.deadline || !data.company_id || !data.category_id) {
+    throw new Error("Missing required fields");
   }
-  if (res.error) throw res.error;
-  return res.data;
+
+  const { data: result, error } = id 
+    ? await supabase.from("jobs").update(data).eq("id", id).select().single()
+    : await supabase.from("jobs").insert(data).select().single();
+
+  if (error) throw error;
+  return result;
 }
 
 // File upload + application insert

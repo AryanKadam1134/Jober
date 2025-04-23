@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +7,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
 
 type Role = "job_seeker" | "employer";
 
@@ -23,6 +23,7 @@ const AuthForm = () => {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const { checkUser } = useAuth();
 
   useEffect(() => {
     // Check if user is logged in; if so, redirect
@@ -67,6 +68,12 @@ const AuthForm = () => {
     }
   };
 
+  const handleSuccess = async () => {
+    toast.success(isLogin ? "Successfully signed in!" : "Account created successfully!");
+    await checkUser(); // Update auth state
+    navigate("/dashboard");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -82,7 +89,7 @@ const AuthForm = () => {
           password: form.password,
         });
         if (error) throw error;
-        toast.success("Signed in successfully!");
+        handleSuccess();
       } else {
         // For debugging - to help identify any issues
         console.log("Signing up with data:", {
@@ -103,7 +110,7 @@ const AuthForm = () => {
         });
         
         if (error) throw error;
-        toast.success("Account created successfully!");
+        handleSuccess();
       }
     } catch (err: any) {
       console.error("Auth error:", err);
