@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 type Role = "job_seeker" | "employer";
 
@@ -82,6 +84,13 @@ const AuthForm = () => {
         if (error) throw error;
         toast.success("Signed in successfully!");
       } else {
+        // For debugging - to help identify any issues
+        console.log("Signing up with data:", {
+          email: form.email,
+          role: form.role,
+          full_name: form.full_name
+        });
+        
         const { error } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,
@@ -112,7 +121,7 @@ const AuthForm = () => {
         {!isLogin && (
           <>
             <div>
-              <label htmlFor="full_name" className="block mb-1 font-medium text-gray-700">Full Name</label>
+              <Label htmlFor="full_name" className="block mb-1 font-medium text-gray-700">Full Name</Label>
               <Input 
                 id="full_name" 
                 name="full_name" 
@@ -123,7 +132,7 @@ const AuthForm = () => {
               />
             </div>
             <div>
-              <label htmlFor="role" className="block mb-1 font-medium text-gray-700">I am a</label>
+              <Label htmlFor="role" className="block mb-1 font-medium text-gray-700">I am a</Label>
               <select
                 id="role"
                 name="role"
@@ -140,7 +149,7 @@ const AuthForm = () => {
           </>
         )}
         <div>
-          <label htmlFor="email" className="block mb-1 font-medium text-gray-700">Email</label>
+          <Label htmlFor="email" className="block mb-1 font-medium text-gray-700">Email</Label>
           <Input 
             id="email" 
             name="email" 
@@ -153,7 +162,7 @@ const AuthForm = () => {
           />
         </div>
         <div>
-          <label htmlFor="password" className="block mb-1 font-medium text-gray-700">Password</label>
+          <Label htmlFor="password" className="block mb-1 font-medium text-gray-700">Password</Label>
           <Input 
             id="password" 
             name="password" 
