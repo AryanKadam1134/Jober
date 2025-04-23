@@ -1,18 +1,25 @@
-
-import { Bookmark } from "lucide-react";
+import { Bookmark, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type JobItem = {
   id: string;
   title: string;
   description: string;
-  company: { name: string };
+  company: { 
+    id: string;
+    name: string;
+  };
+  company_id: string;
   location: string;
   job_type: string;
   salary_min: number | null;
   salary_max: number | null;
   category: { name: string } | null;
+  category_id: string;
   deadline: string;
 };
 
@@ -20,9 +27,34 @@ type Props = {
   job: JobItem;
   onApply?: () => void;
   onBookmark?: () => void;
+  onEdit?: () => void;
+  showActions?: boolean;
 };
 
-export default function JobCard({ job, onApply, onBookmark }: Props) {
+export default function JobCard({ job, onApply, onBookmark, onEdit, showActions = true }: Props) {
+  const { role } = useAuth();
+  const [isOwner, setIsOwner] = useState(false);
+  const isEmployer = role === "employer";
+
+  useEffect(() => {
+    const checkOwnership = async () => {
+      if (!isEmployer) return;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: company } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
+
+      setIsOwner(company?.id === job.company_id);
+    };
+
+    checkOwnership();
+  }, [job.company_id, isEmployer]);
+
   return (
     <Card className="mb-4 shadow-md">
       <CardContent className="p-5">
@@ -39,12 +71,23 @@ export default function JobCard({ job, onApply, onBookmark }: Props) {
               ? `$${job.salary_min} - $${job.salary_max}`
               : "Salary not specified"}
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="secondary" onClick={onApply}>Apply</Button>
-            <Button size="sm" variant="ghost" onClick={onBookmark}>
-              <Bookmark />
-            </Button>
-          </div>
+          {showActions && (
+            <div className="flex gap-2">
+              {isEmployer && isOwner ? (
+                <Button size="sm" variant="secondary" onClick={onEdit}>
+                  <Edit className="w-4 h-4 mr-1" />
+                  Edit
+                </Button>
+              ) : !isEmployer && (
+                <>
+                  <Button size="sm" variant="secondary" onClick={onApply}>Apply</Button>
+                  <Button size="sm" variant="ghost" onClick={onBookmark}>
+                    <Bookmark className="w-4 h-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

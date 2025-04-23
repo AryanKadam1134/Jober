@@ -12,7 +12,7 @@ export async function getJobs(filter: {
     .from("jobs")
     .select(`
       *,
-      company:companies(name),
+      company:companies(id, name),
       category:categories(name)
     `)
     .eq("is_active", true);

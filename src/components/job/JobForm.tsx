@@ -8,19 +8,20 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface JobFormProps {
   onSuccess?: () => void;
+  job?: JobItem; // Add this prop
 }
 
-export default function JobForm({ onSuccess }: JobFormProps) {
+export default function JobForm({ onSuccess, job }: JobFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    location: "",
-    job_type: "full_time",
-    salary_min: "",
-    salary_max: "",
-    deadline: "",
+    title: job?.title || "",
+    description: job?.description || "",
+    location: job?.location || "",
+    job_type: job?.job_type || "full_time",
+    salary_min: job?.salary_min?.toString() || "",
+    salary_max: job?.salary_max?.toString() || "",
+    deadline: job?.deadline || "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,48 +29,60 @@ export default function JobForm({ onSuccess }: JobFormProps) {
     setLoading(true);
 
     try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error("Not authenticated");
+      if (job) {
+        // Update existing job
+        await createOrUpdateJob(
+          {
+            ...formData,
+            company_id: job.company_id,
+            category_id: job.category_id,
+          },
+          job.id
+        );
+      } else {
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) throw new Error("Not authenticated");
 
-      // Create or get company in a single transaction
-      const { data: company, error: companyError } = await supabase.rpc('get_or_create_company', {
-        user_id: user.id,
-        company_name: `${user.user_metadata.full_name}'s Company`,
-        company_description: 'Company description'
-      });
+        // Create or get company in a single transaction
+        const { data: company, error: companyError } = await supabase.rpc('get_or_create_company', {
+          user_id: user.id,
+          company_name: `${user.user_metadata.full_name}'s Company`,
+          company_description: 'Company description'
+        });
 
-      if (companyError) {
-        console.error('Company error:', companyError);
-        throw new Error('Failed to get or create company');
+        if (companyError) {
+          console.error('Company error:', companyError);
+          throw new Error('Failed to get or create company');
+        }
+
+        // Create job
+        const jobData = {
+          title: formData.title,
+          description: formData.description,
+          location: formData.location,
+          job_type: formData.job_type,
+          salary_min: formData.salary_min ? Number(formData.salary_min) : null,
+          salary_max: formData.salary_max ? Number(formData.salary_max) : null,
+          deadline: formData.deadline,
+          company_id: company.id,
+          category_id: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
+          is_active: true
+        };
+
+        await createOrUpdateJob(jobData);
       }
-
-      // Create job
-      const jobData = {
-        title: formData.title,
-        description: formData.description,
-        location: formData.location,
-        job_type: formData.job_type,
-        salary_min: formData.salary_min ? Number(formData.salary_min) : null,
-        salary_max: formData.salary_max ? Number(formData.salary_max) : null,
-        deadline: formData.deadline,
-        company_id: company.id,
-        category_id: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
-        is_active: true
-      };
-
-      await createOrUpdateJob(jobData);
       
       toast({
         title: "Success",
-        description: "Job posted successfully!",
+        description: job ? "Job updated successfully!" : "Job posted successfully!",
       });
       onSuccess?.();
     } catch (error: any) {
-      console.error("Error posting job:", error);
+      console.error("Error saving job:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to post job. Please try again.",
+        description: error.message || "Failed to save job. Please try again.",
         variant: "destructive",
       });
     } finally {
