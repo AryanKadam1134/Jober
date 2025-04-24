@@ -101,14 +101,18 @@ export default function JobList({ canApply = true }: Props) {
       ))}
 
       <Dialog open={!!editingJob} onOpenChange={() => setEditingJob(null)}>
-        <DialogContent className="sm:max-w-[600px]">
-          <h2 className="text-xl font-semibold mb-4">Edit Job Posting</h2>
-          {editingJob && (
-            <JobForm 
-              job={editingJob}
-              onSuccess={handleEditSuccess}
-            />
-          )}
+        <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0">
+          <div className="sticky top-0 bg-white p-6 border-b z-10">
+            <h2 className="text-xl font-semibold">Edit Job Posting</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            {editingJob && (
+              <JobForm 
+                job={editingJob}
+                onSuccess={handleEditSuccess}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -91,74 +91,84 @@ export default function JobForm({ onSuccess, job }: JobFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">Job Title</label>
-        <Input
-          required
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          placeholder="e.g. Senior React Developer"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Description</label>
-        <Textarea
-          required
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Job description and requirements"
-          rows={4}
-        />
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="relative">
+      <div className="space-y-4">
+        {/* Job Title */}
         <div>
-          <label className="block text-sm font-medium mb-1">Location</label>
+          <label className="block text-sm font-medium mb-1">Job Title</label>
           <Input
             required
-            value={formData.location}
-            onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-            placeholder="e.g. New York, NY"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="e.g. Senior React Developer"
           />
         </div>
 
+        {/* Description */}
         <div>
-          <label className="block text-sm font-medium mb-1">Job Type</label>
-          <select
+          <label className="block text-sm font-medium mb-1">Description</label>
+          <Textarea
             required
-            value={formData.job_type}
-            onChange={(e) => setFormData(prev => ({ ...prev, job_type: e.target.value }))}
-            className="w-full rounded-md border border-gray-300 px-3 py-2"
-          >
-            <option value="full_time">Full Time</option>
-            <option value="part_time">Part Time</option>
-            <option value="contract">Contract</option>
-            <option value="remote">Remote</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Minimum Salary</label>
-          <Input
-            type="number"
-            value={formData.salary_min}
-            onChange={(e) => setFormData(prev => ({ ...prev, salary_min: e.target.value }))}
-            placeholder="e.g. 50000"
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            placeholder="Job description and requirements"
+            rows={4}
+            className="resize-none"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Maximum Salary</label>
-          <Input
-            type="number"
-            value={formData.salary_max}
-            onChange={(e) => setFormData(prev => ({ ...prev, salary_max: e.target.value }))}
-            placeholder="e.g. 80000"
-          />
+        {/* Location and Job Type */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Location</label>
+            <Input
+              required
+              value={formData.location}
+              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+              placeholder="e.g. New York, NY"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Job Type</label>
+            <select
+              required
+              value={formData.job_type}
+              onChange={(e) => setFormData(prev => ({ ...prev, job_type: e.target.value }))}
+              className="w-full rounded-md border border-input px-3 py-2 bg-background"
+            >
+              <option value="full_time">Full Time</option>
+              <option value="part_time">Part Time</option>
+              <option value="contract">Contract</option>
+              <option value="remote">Remote</option>
+            </select>
+          </div>
         </div>
 
+        {/* Salary Range */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Minimum Salary</label>
+            <Input
+              type="number"
+              value={formData.salary_min}
+              onChange={(e) => setFormData(prev => ({ ...prev, salary_min: e.target.value }))}
+              placeholder="e.g. 50000"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Maximum Salary</label>
+            <Input
+              type="number"
+              value={formData.salary_max}
+              onChange={(e) => setFormData(prev => ({ ...prev, salary_max: e.target.value }))}
+              placeholder="e.g. 80000"
+            />
+          </div>
+        </div>
+
+        {/* Deadline */}
         <div>
           <label className="block text-sm font-medium mb-1">Application Deadline</label>
           <Input
@@ -170,9 +180,11 @@ export default function JobForm({ onSuccess, job }: JobFormProps) {
         </div>
       </div>
 
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Posting..." : "Post Job"}
-      </Button>
+      <div className="sticky bottom-0 bg-white pt-4 mt-6 flex justify-end border-t">
+        <Button type="submit" disabled={loading}>
+          {loading ? "Saving..." : "Save Changes"}
+        </Button>
+      </div>
     </form>
   );
 }
