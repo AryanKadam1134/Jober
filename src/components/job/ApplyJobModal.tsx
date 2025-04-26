@@ -1,54 +1,132 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { uploadResumeAndApply } from "@/utils/supabaseJobs";
 
-type Props = {
+interface ApplyJobModalProps {
   jobId: string;
+  isOpen: boolean;
   onClose: () => void;
-};
+  onSuccess?: () => void;
+}
 
-export default function ApplyJobModal({ jobId, onClose }: Props) {
-  const [form, setForm] = useState({ cover_letter: "", note: "", resume: null as File | null });
+export default function ApplyJobModal({ jobId, isOpen, onClose, onSuccess }: ApplyJobModalProps) {
   const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    cover_letter: "",
+    resume: null as File | null
+  });
 
-  const handleInput = (e: any) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, resume: e.target.files?.[0] || null }));
-  };
-
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.resume) return toast.error("Resume required!");
+    if (!form.resume) {
+      toast.error("Please upload your resume");
+      return;
+    }
+
     setLoading(true);
     try {
-      await uploadResumeAndApply({ ...form, job_id: jobId });
-      toast.success("Application submitted!");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Please sign in to apply");
+
+      // Upload resume
+      const timestamp = Date.now();
+      const fileName = `${user.id}/${timestamp}-${form.resume.name.replace(/\s+/g, '_')}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('resumes')
+        .upload(fileName, form.resume, {
+          cacheControl: '3600',
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get the URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('resumes')
+        .getPublicUrl(fileName);
+
+      // Create application
+      const { error: applyError } = await supabase
+        .from('applications')
+        .insert({
+          job_id: jobId,
+          applicant_id: user.id,
+          cover_letter: form.cover_letter,
+          resume_url: publicUrl,
+          status: 'pending'
+        });
+
+      if (applyError) throw applyError;
+
+      toast.success("Application submitted successfully!");
+      onSuccess?.();
       onClose();
-    } catch {
-      toast.error("Failed to apply.");
+    } catch (error: any) {
+      console.error("Application error:", error);
+      toast.error(error.message || "Failed to submit application");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
-      <div className="bg-white rounded-lg p-6 min-w-[340px]">
-        <form className="space-y-3" onSubmit={handleSubmit}>
-          <Input type="file" name="resume" onChange={handleFile} accept=".pdf,.doc,.docx" required />
-          <textarea name="cover_letter" placeholder="Cover letter" onChange={handleInput} className="w-full border rounded px-3 py-2" required />
-          <Input name="note" value={form.note} onChange={handleInput} placeholder="Optional note" />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit" className="bg-indigo-600 text-white" disabled={loading}>{loading ? "Applying..." : "Apply"}</Button>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Apply for Job</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Cover Letter</label>
+            <Textarea
+              placeholder="Write a brief cover letter..."
+              value={form.cover_letter}
+              onChange={(e) => setForm(prev => ({ ...prev, cover_letter: e.target.value }))}
+              rows={5}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Resume (PDF)</label>
+            <Input
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  if (file.type !== 'application/pdf') {
+                    toast.error("Please upload PDF files only");
+                    return;
+                  }
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast.error("File size should be less than 5MB");
+                    return;
+                  }
+                  setForm(prev => ({ ...prev, resume: file }));
+                }
+              }}
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Submitting..." : "Submit Application"}
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

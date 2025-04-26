@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; // Add useEffect import
 import { Bookmark, BookmarkCheck, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ApplyJobModal from "./ApplyJobModal";
+import JobDetailsDialog from "./JobDetailsDialog"; // Import JobDetailsDialog
 
 export type JobItem = {
   id: string;
@@ -36,11 +38,16 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
   const { role } = useAuth();
   const [isOwner, setIsOwner] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showJobDetails, setShowJobDetails] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
   const isEmployer = role === "employer";
 
   useEffect(() => {
     checkOwnership();
     checkIfSaved();
+    checkIfApplied();
   }, [job.id]);
 
   const checkOwnership = async () => {
@@ -78,6 +85,36 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
       setIsSaved(!!data);
     } catch (error) {
       console.error("Error checking saved status:", error);
+    }
+  };
+
+  const checkIfApplied = async () => {
+    if (isEmployer) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('applications')
+        .select('id, status')
+        .eq('job_id', job.id)
+        .eq('applicant_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error checking application status:", error);
+        return;
+      }
+
+      if (data) {
+        setHasApplied(true);
+        setApplicationStatus(data.status);
+      } else {
+        setHasApplied(false);
+        setApplicationStatus(null);
+      }
+    } catch (error) {
+      console.error("Error checking application status:", error);
     }
   };
 
@@ -122,13 +159,22 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
   return (
     <Card className="mb-4">
       <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">{job.title}</h3>
-          <span className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded">{job.job_type}</span>
+        <div className="cursor-pointer" onClick={() => setShowJobDetails(true)}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold hover:text-indigo-600 transition-colors">
+              {job.title}
+            </h3>
+            <span className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded">
+              {job.job_type}
+            </span>
+          </div>
+          <div className="text-gray-700 mt-1">{job.company?.name}</div>
+          <div className="text-gray-500 text-sm mt-1">
+            {job.location} • {job.category?.name}
+          </div>
+          <div className="mt-2 text-sm">{job.description.slice(0, 120)}...</div>
         </div>
-        <div className="text-gray-700 mt-1">{job.company?.name}</div>
-        <div className="text-gray-500 text-sm mt-1">{job.location} • {job.category?.name}</div>
-        <div className="mt-2 text-sm">{job.description.slice(0, 120)}...</div>
+
         <div className="flex justify-between items-center mt-3">
           <div className="text-xs text-gray-600">
             {job.salary_min !== null && job.salary_max !== null
@@ -144,13 +190,28 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
                 </Button>
               ) : !isEmployer && (
                 <>
-                  <Button size="sm" variant="secondary" onClick={onApply}>
-                    Apply
+                  <Button 
+                    size="sm" 
+                    variant="secondary" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!hasApplied) {
+                        setShowApplyModal(true);
+                      } else {
+                        toast.error("You have already applied for this position");
+                      }
+                    }}
+                    disabled={hasApplied}
+                  >
+                    {hasApplied ? 'Applied' : 'Apply'}
                   </Button>
                   <Button 
                     size="sm" 
                     variant="ghost" 
-                    onClick={handleSave}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSave();
+                    }}
                   >
                     {isSaved ? 
                       <BookmarkCheck className="w-4 h-4 text-indigo-600" /> : 
@@ -163,6 +224,32 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
           )}
         </div>
       </CardContent>
+
+      {/* Update JobDetailsDialog */}
+      <JobDetailsDialog
+        job={job}
+        isOpen={showJobDetails}
+        onClose={() => setShowJobDetails(false)}
+        onApply={() => {
+          if (!hasApplied) {
+            setShowApplyModal(true);
+          }
+        }}
+        hasApplied={hasApplied}
+      />
+
+      {/* Existing Apply Modal */}
+      {showApplyModal && (
+        <ApplyJobModal
+          jobId={job.id}
+          isOpen={showApplyModal}
+          onClose={() => setShowApplyModal(false)}
+          onSuccess={() => {
+            onApply?.();
+            setShowApplyModal(false);
+          }}
+        />
+      )}
     </Card>
   );
 }

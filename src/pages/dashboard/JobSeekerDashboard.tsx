@@ -8,6 +8,10 @@ import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileCard from "@/components/profile/ProfileCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import JobDetailsDialog from "@/components/job/JobDetailsDialog";
+import { JobItem } from "@/components/job/JobCard";
+import ApplyJobModal from "@/components/job/ApplyJobModal";
+import { BookmarkCheck } from "lucide-react";
 
 export default function JobSeekerDashboard() {
   const [userData, setUserData] = useState<any>(null);
@@ -16,6 +20,10 @@ export default function JobSeekerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [recentApplications, setRecentApplications] = useState<any[]>([]);
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
+  const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
+  const [showJobDetails, setShowJobDetails] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [selectedJobToApply, setSelectedJobToApply] = useState<JobItem | null>(null);
 
   const fetchUserData = async () => {
     try {
@@ -65,6 +73,108 @@ export default function JobSeekerDashboard() {
     }
   };
 
+  // Add this function to handle withdrawal
+  const handleWithdrawApplication = async (applicationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .delete()
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast.success("Application withdrawn successfully");
+      await fetchApplications(); // Refresh the applications list
+      setShowJobDetails(false);
+      setSelectedJob(null);
+    } catch (error) {
+      console.error("Error withdrawing application:", error);
+      toast.error("Failed to withdraw application");
+    }
+  };
+
+  // Add this function after handleWithdrawApplication
+  const handleUnsaveJob = async (savedJobId: string) => {
+    try {
+      const { error } = await supabase
+        .from('saved_jobs')
+        .delete()
+        .eq('id', savedJobId);
+
+      if (error) throw error;
+
+      toast.success("Job removed from saved jobs");
+      await fetchSavedJobs(); // Refresh the saved jobs list
+    } catch (error) {
+      console.error("Error removing saved job:", error);
+      toast.error("Failed to remove job from saved list");
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData();
+    fetchProfileData();
+    fetchApplications();
+    fetchSavedJobs();
+
+    // Set up real-time subscription for application status updates
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const subscription = supabase
+        .channel('jobseeker-application-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'applications',
+            filter: `applicant_id=eq.${user.id}`
+          },
+          (payload) => {
+            // Update the application in the local state
+            setRecentApplications(prev => 
+              prev.map(app => {
+                if (app.id === payload.new.id) {
+                  return {
+                    ...app,
+                    status: payload.new.status,
+                    updated_at: payload.new.updated_at
+                  };
+                }
+                return app;
+              })
+            );
+
+            // Show appropriate notification based on status
+            const status = payload.new.status;
+            const messages = {
+              accepted: '🎉 Congratulations! Your application has been accepted!',
+              rejected: '😔 Your application has been rejected.',
+              pending: '📝 Your application status has been updated to pending.'
+            };
+            toast.info(messages[status as keyof typeof messages]);
+          }
+        )
+        .subscribe();
+
+      return subscription;
+    };
+
+    let subscription: any;
+    setupSubscription().then(sub => {
+      subscription = sub;
+    });
+
+    // Cleanup subscription
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, []);
+
   const fetchApplications = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -75,17 +185,26 @@ export default function JobSeekerDashboard() {
         .select(`
           id,
           created_at,
+          updated_at,
+          status,
           jobs!job_id (
             id,
             title,
-            companies!fk_company (
+            description,
+            location,
+            job_type,
+            salary_min,
+            salary_max,
+            deadline,
+            category:categories(name),
+            company:companies!fk_company (
               id,
               name
             )
           )
         `)
         .eq('applicant_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false }); // Sort by last updated
 
       if (error) throw error;
       setRecentApplications(data || []);
@@ -107,7 +226,14 @@ export default function JobSeekerDashboard() {
           jobs!job_id (
             id,
             title,
-            companies!fk_company (
+            description,
+            location,
+            job_type,
+            salary_min,
+            salary_max,
+            deadline,
+            category:categories(name),
+            company:companies!fk_company (
               id,
               name
             )
@@ -123,12 +249,34 @@ export default function JobSeekerDashboard() {
     }
   };
 
-  useEffect(() => {
-    fetchUserData();
-    fetchProfileData();
-    fetchApplications();
-    fetchSavedJobs();
-  }, []);
+  // Add this function to handle successful application
+  const handleApplicationSuccess = async () => {
+    setShowApplyModal(false);
+    setSelectedJobToApply(null);
+    await fetchApplications();
+    toast.success("Application submitted successfully!");
+  };
+
+  // Add this function to check application status
+  const checkIfJobApplied = async (jobId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('applications')
+        .select('id, status')
+        .eq('job_id', jobId)
+        .eq('applicant_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Error checking application status:", error);
+      return null;
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto mt-10 px-4">
@@ -187,12 +335,37 @@ export default function JobSeekerDashboard() {
               ) : (
                 <div className="space-y-4">
                   {recentApplications.map((application) => (
-                    <div key={application.id} className="border-b pb-4">
+                    <div 
+                      key={application.id} 
+                      className="border-b pb-4 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                      onClick={() => {
+                        setSelectedJob({
+                          ...application.jobs,
+                          applicationId: application.id,
+                          applicationStatus: application.status
+                        });
+                        setShowJobDetails(true);
+                      }}
+                    >
                       <h3 className="font-medium">{application.jobs.title}</h3>
-                      <p className="text-sm text-gray-600">{application.jobs.companies.name}</p>
-                      <p className="text-xs text-gray-500">
-                        Applied on: {new Date(application.created_at).toLocaleDateString()}
-                      </p>
+                      <p className="text-sm text-gray-600">{application.jobs.company.name}</p>
+                      <div className="flex justify-between items-center">
+                        <p className="text-xs text-gray-500">
+                          Applied on: {new Date(application.created_at).toLocaleDateString()}
+                          {application.updated_at && application.updated_at !== application.created_at && (
+                            <span className="ml-2">
+                              • Updated: {new Date(application.updated_at).toLocaleDateString()}
+                            </span>
+                          )}
+                        </p>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          application.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                          application.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -206,12 +379,44 @@ export default function JobSeekerDashboard() {
               ) : (
                 <div className="space-y-4">
                   {savedJobs.map((saved) => (
-                    <div key={saved.id} className="border-b pb-4">
-                      <h3 className="font-medium">{saved.jobs.title}</h3>
-                      <p className="text-sm text-gray-600">{saved.jobs.companies.name}</p>
-                      <p className="text-xs text-gray-500">
-                        Saved on: {new Date(saved.created_at).toLocaleDateString()}
-                      </p>
+                    <div 
+                      key={saved.id} 
+                      className="border-b pb-4"
+                    >
+                      <div 
+                        className="cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                        onClick={async () => {
+                          const applicationData = await checkIfJobApplied(saved.jobs.id);
+                          setSelectedJob({
+                            ...saved.jobs,
+                            applicationId: applicationData?.id,
+                            applicationStatus: applicationData?.status
+                          });
+                          setShowJobDetails(true);
+                        }}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium">{saved.jobs.title}</h3>
+                            <p className="text-sm text-gray-600">{saved.jobs.company.name}</p>
+                            <p className="text-xs text-gray-500">
+                              Saved on: {new Date(saved.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnsaveJob(saved.id);
+                              }}
+                            >
+                              <BookmarkCheck className="w-4 h-4 text-indigo-600" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -284,6 +489,44 @@ export default function JobSeekerDashboard() {
     </div>
   </DialogContent>
 </Dialog>
+
+      {selectedJobToApply && (
+        <ApplyJobModal
+          jobId={selectedJobToApply.id}
+          isOpen={showApplyModal}
+          onClose={() => {
+            setShowApplyModal(false);
+            setSelectedJobToApply(null);
+          }}
+          onSuccess={handleApplicationSuccess}
+        />
+      )}
+
+      {/* Update the JobDetailsDialog usage */}
+      {selectedJob && (
+        <JobDetailsDialog
+          job={selectedJob}
+          isOpen={showJobDetails}
+          onClose={() => {
+            setShowJobDetails(false);
+            setSelectedJob(null);
+          }}
+          onApply={() => {
+            if (!selectedJob.applicationId) {
+              setShowJobDetails(false);
+              setSelectedJobToApply(selectedJob);
+              setShowApplyModal(true);
+            }
+          }}
+          onWithdraw={
+            selectedJob.applicationId 
+              ? () => handleWithdrawApplication(selectedJob.applicationId!)
+              : undefined
+          }
+          applicationStatus={selectedJob.applicationStatus}
+          showApplyButton={!selectedJob.applicationId}
+        />
+      )}
     </div>
   );
 }
