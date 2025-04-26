@@ -31,35 +31,64 @@ export default function ProfileForm({ initialData, onSuccess }: ProfileFormProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    let resume_url = initialData?.resume_url;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Validate resume file format
+      // Handle resume upload
       if (resume) {
-        const fileType = resume.type;
-        if (fileType !== 'application/pdf') {
-          throw new Error("Please upload resume in PDF format only");
+        try {
+          // Delete old resume if exists
+          if (initialData?.resume_url) {
+            const oldFileName = initialData.resume_url.split('/').pop();
+            if (oldFileName) {
+              await supabase.storage
+                .from('resumes')
+                .remove([oldFileName]);
+            }
+          }
+
+          // Create a clean filename
+          const timestamp = Date.now();
+          const cleanFileName = resume.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+          const fileName = `${user.id}/${timestamp}-${cleanFileName}`;
+
+          // Upload new resume
+          const { error: uploadError } = await supabase.storage
+            .from('resumes')
+            .upload(fileName, resume, {
+              cacheControl: '3600',
+              contentType: 'application/pdf',
+              upsert: true
+            });
+
+          if (uploadError) {
+            console.error("Upload error:", uploadError);
+            throw uploadError;
+          }
+
+          // Get public URL with signed URLs
+          const { data } = await supabase.storage
+            .from('resumes')
+            .createSignedUrl(fileName, 31536000); // URL valid for 1 year
+
+          if (data) {
+            resume_url = data.signedUrl;
+            console.log("Resume uploaded successfully:", resume_url);
+          } else {
+            throw new Error("Failed to generate signed URL");
+          }
+        } catch (error) {
+          console.error("Resume upload error:", error);
+          throw new Error("Failed to upload resume");
         }
       }
 
-      let resume_url = initialData?.resume_url;
-      if (resume) {
-        const fileName = `${user.id}-${Date.now()}-${resume.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('resumes')
-          .upload(fileName, resume);
-        
-        if (uploadError) throw uploadError;
-        
-        resume_url = supabase.storage
-          .from('resumes')
-          .getPublicUrl(fileName).data.publicUrl;
-      }
-
+      // Update profile with new resume URL
       const updatedProfile = {
-        id: user.id, // Important: Include the user ID
+        id: user.id,
         full_name: user.user_metadata.full_name,
         title: formData.title || null,
         bio: formData.bio || null,
@@ -70,14 +99,12 @@ export default function ProfileForm({ initialData, onSuccess }: ProfileFormProps
         website: formData.website || null,
         experience: experiences,
         education: education,
-        resume_url: resume_url || null,
+        resume_url,
         role: 'job_seeker',
         updated_at: new Date().toISOString()
       };
 
-      console.log("Updating profile with:", updatedProfile);
-
-      const { data, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('profiles')
         .upsert(updatedProfile)
         .select()
@@ -85,7 +112,6 @@ export default function ProfileForm({ initialData, onSuccess }: ProfileFormProps
 
       if (updateError) throw updateError;
 
-      console.log("Update response:", data);
       toast.success("Profile updated successfully!");
       onSuccess?.();
     } catch (error: any) {
@@ -313,29 +339,41 @@ export default function ProfileForm({ initialData, onSuccess }: ProfileFormProps
 
             <div>
               <label className="block text-sm font-medium mb-1">Resume (PDF only)</label>
-              <Input
-                type="file"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file && file.type !== 'application/pdf') {
-                    toast.error("Please upload PDF files only");
-                    e.target.value = ''; // Clear the input
-                    return;
-                  }
-                  setResume(file || null);
-                }}
-                accept=".pdf"
-              />
-              {initialData?.resume_url && (
-                <a 
-                  href={initialData.resume_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sm text-indigo-600 hover:underline mt-1 inline-block"
-                >
-                  View current resume
-                </a>
-              )}
+              <div className="space-y-2">
+                <Input
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.type !== 'application/pdf') {
+                        toast.error("Please upload PDF files only");
+                        e.target.value = '';
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                        toast.error("File size should be less than 5MB");
+                        e.target.value = '';
+                        return;
+                      }
+                      setResume(file);
+                      toast.success("Resume selected successfully");
+                    }
+                  }}
+                />
+                {initialData?.resume_url && (
+                  <div className="flex items-center gap-2">
+                    <a 
+                      href={initialData.resume_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-indigo-600 hover:underline"
+                    >
+                      View current resume
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </Card>

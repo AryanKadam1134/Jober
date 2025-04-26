@@ -13,10 +13,46 @@ export default function EmployerDashboard() {
     active: 0,
     applications: 0
   });
+  const [applications, setApplications] = useState<any[]>([]);
+
+  const fetchApplications = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: company } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!company) return;
+
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          id,
+          created_at,
+          status,
+          resume_url,
+          cover_letter,
+          job:jobs(id, title),
+          applicant:profiles(id, full_name, title)
+        `)
+        .eq('jobs.company_id', company.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setApplications(data || []);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+    }
+  };
 
   useEffect(() => {
     fetchUserData();
     fetchJobStats();
+    fetchApplications();
   }, []);
 
   const fetchUserData = async () => {
@@ -82,6 +118,29 @@ export default function EmployerDashboard() {
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Your Job Listings</h2>
         <JobList canApply={false} />
+      </Card>
+
+      <Card className="p-6 mt-6">
+        <h2 className="text-xl font-semibold mb-4">Recent Applications</h2>
+        <div className="space-y-4">
+          {applications.map((application) => (
+            <div key={application.id} className="border-b pb-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-medium">{application.applicant.full_name}</h3>
+                  <p className="text-sm text-gray-600">{application.applicant.title}</p>
+                  <p className="text-sm text-gray-500">Applied for: {application.job.title}</p>
+                </div>
+                <Button
+                  variant="link"
+                  onClick={() => window.open(application.resume_url, '_blank')}
+                >
+                  View Resume
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
   );

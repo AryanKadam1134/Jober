@@ -2,6 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ProfileData } from "@/types/profile";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client"; // Add this import
+import { toast } from "sonner"; // Add this import
 
 interface ProfileCardProps {
   profile: Partial<ProfileData>;
@@ -123,14 +125,30 @@ export default function ProfileCard({ profile, onEdit }: ProfileCardProps) {
           <div>
             <h4 className="text-lg font-medium mb-2">Resume</h4>
             {profile.resume_url ? (
-              <a
-                href={profile.resume_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 hover:underline inline-flex items-center"
+              <Button
+                variant="link"
+                className="text-indigo-600 hover:underline p-0 h-auto font-normal"
+                onClick={async () => {
+                  try {
+                    const fileName = profile.resume_url.split('/').pop();
+                    if (fileName) {
+                      const { data, error } = await supabase.storage
+                        .from('resumes')
+                        .createSignedUrl(`${profile.id}/${fileName}`, 3600); // URL valid for 1 hour
+
+                      if (error) throw error;
+                      if (data) {
+                        window.open(data.signedUrl, '_blank');
+                      }
+                    }
+                  } catch (error) {
+                    console.error("Error accessing resume:", error);
+                    toast.error("Failed to access resume");
+                  }
+                }}
               >
                 View Resume
-              </a>
+              </Button>
             ) : (
               <p className="text-gray-500">Upload your resume</p>
             )}

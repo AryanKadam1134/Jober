@@ -55,35 +55,38 @@ export async function createOrUpdateJob(payload: any, id?: string) {
   return result;
 }
 
-// File upload + application insert
-export async function uploadResumeAndApply({
-  job_id,
-  resume,
-  cover_letter,
-  note,
-}: {
-  job_id: string;
+// Add this function
+export async function applyForJob(jobId: string, application: {
   resume: File;
   cover_letter: string;
   note?: string;
 }) {
-  // Upload file to Supabase Storage
-  const filename = `${Date.now()}-${resume.name}`;
-  const { data: upload, error: uploadError } = await supabase.storage
-    .from("resumes")
-    .upload(filename, resume);
-  if (uploadError) throw uploadError;
-  const publicUrl = supabase.storage.from("resumes").getPublicUrl(filename).data.publicUrl;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
 
-  // Insert application row
-  const { data, error } = await supabase.from("applications").insert({
-    job_id,
-    resume_url: publicUrl,
-    cover_letter,
-    note,
-    status: "pending",
-    // applicant_id will be filled by auth trigger/RLS
-  });
+  // Upload resume
+  const fileName = `${user.id}-${Date.now()}-${application.resume.name}`;
+  const { error: uploadError } = await supabase.storage
+    .from('resumes')
+    .upload(fileName, application.resume);
+
+  if (uploadError) throw uploadError;
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('resumes')
+    .getPublicUrl(fileName);
+
+  // Create application
+  const { error } = await supabase
+    .from('applications')
+    .insert({
+      job_id: jobId,
+      applicant_id: user.id,
+      resume_url: publicUrl,
+      cover_letter: application.cover_letter,
+      note: application.note,
+      status: 'pending'
+    });
+
   if (error) throw error;
-  return data;
 }

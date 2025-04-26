@@ -1,9 +1,10 @@
-import { Bookmark, Edit } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bookmark, BookmarkCheck, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export type JobItem = {
   id: string;
@@ -34,29 +35,92 @@ type Props = {
 export default function JobCard({ job, onApply, onBookmark, onEdit, showActions = true }: Props) {
   const { role } = useAuth();
   const [isOwner, setIsOwner] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const isEmployer = role === "employer";
 
   useEffect(() => {
-    const checkOwnership = async () => {
-      if (!isEmployer) return;
-      
+    checkOwnership();
+    checkIfSaved();
+  }, [job.id]);
+
+  const checkOwnership = async () => {
+    if (!isEmployer) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: company } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('owner_id', user.id)
+      .single();
+
+    setIsOwner(company?.id === job.company_id);
+  };
+
+  const checkIfSaved = async () => {
+    if (isEmployer) return;
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: company } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
+      const { data, error } = await supabase
+        .from('saved_jobs')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('job_id', job.id)
+        .maybeSingle();
 
-      setIsOwner(company?.id === job.company_id);
-    };
+      if (error) {
+        console.error("Error checking saved status:", error);
+        return;
+      }
 
-    checkOwnership();
-  }, [job.company_id, isEmployer]);
+      setIsSaved(!!data);
+    } catch (error) {
+      console.error("Error checking saved status:", error);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Please sign in to save jobs");
+
+      if (isSaved) {
+        const { error } = await supabase
+          .from('saved_jobs')
+          .delete()
+          .match({ 
+            job_id: job.id, 
+            user_id: user.id 
+          });
+
+        if (error) throw error;
+        setIsSaved(false);
+        toast.success("Job removed from saved jobs");
+      } else {
+        const { error } = await supabase
+          .from('saved_jobs')
+          .insert({ 
+            job_id: job.id, 
+            user_id: user.id 
+          });
+
+        if (error) throw error;
+        setIsSaved(true);
+        toast.success("Job saved successfully");
+      }
+
+      // Trigger onBookmark callback if provided
+      onBookmark?.();
+    } catch (error: any) {
+      console.error("Error saving job:", error);
+      toast.error(error.message || "Failed to save job");
+    }
+  };
 
   return (
-    <Card className="mb-4 shadow-md">
+    <Card className="mb-4">
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold">{job.title}</h3>
@@ -80,9 +144,18 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
                 </Button>
               ) : !isEmployer && (
                 <>
-                  <Button size="sm" variant="secondary" onClick={onApply}>Apply</Button>
-                  <Button size="sm" variant="ghost" onClick={onBookmark}>
-                    <Bookmark className="w-4 h-4" />
+                  <Button size="sm" variant="secondary" onClick={onApply}>
+                    Apply
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={handleSave}
+                  >
+                    {isSaved ? 
+                      <BookmarkCheck className="w-4 h-4 text-indigo-600" /> : 
+                      <Bookmark className="w-4 h-4" />
+                    }
                   </Button>
                 </>
               )}

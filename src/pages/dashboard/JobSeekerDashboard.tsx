@@ -185,7 +185,17 @@ export default function JobSeekerDashboard() {
               {recentApplications.length === 0 ? (
                 <p className="text-gray-500">No applications yet. Start applying to jobs!</p>
               ) : (
-                <div>Applications list will appear here</div>
+                <div className="space-y-4">
+                  {recentApplications.map((application) => (
+                    <div key={application.id} className="border-b pb-4">
+                      <h3 className="font-medium">{application.jobs.title}</h3>
+                      <p className="text-sm text-gray-600">{application.jobs.companies.name}</p>
+                      <p className="text-xs text-gray-500">
+                        Applied on: {new Date(application.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               )}
             </Card>
 
@@ -194,7 +204,17 @@ export default function JobSeekerDashboard() {
               {savedJobs.length === 0 ? (
                 <p className="text-gray-500">No saved jobs yet. Browse jobs and save the ones you like!</p>
               ) : (
-                <div>Saved jobs list will appear here</div>
+                <div className="space-y-4">
+                  {savedJobs.map((saved) => (
+                    <div key={saved.id} className="border-b pb-4">
+                      <h3 className="font-medium">{saved.jobs.title}</h3>
+                      <p className="text-sm text-gray-600">{saved.jobs.companies.name}</p>
+                      <p className="text-xs text-gray-500">
+                        Saved on: {new Date(saved.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               )}
             </Card>
           </div>
