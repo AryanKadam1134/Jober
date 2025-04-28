@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"; // Add useEffect import
-import { Bookmark, BookmarkCheck, Edit } from "lucide-react";
+import { Bookmark, BookmarkCheck, Edit, Building2, MapPin, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ApplyJobModal from "./ApplyJobModal";
 import JobDetailsDialog from "./JobDetailsDialog"; // Import JobDetailsDialog
+import { motion } from "framer-motion"; // Add this import
 
 export type JobItem = {
   id: string;
@@ -157,20 +158,31 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
   };
 
   return (
-    <Card className="mb-4">
-      <CardContent className="p-5">
-        <div className="cursor-pointer" onClick={() => setShowJobDetails(true)}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="mb-4 hover-card border-l-4 border-l-indigo-500">
+        <CardContent className="p-5">
+          <div className="cursor-pointer" onClick={() => setShowJobDetails(true)}>
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold hover:text-indigo-600 transition-colors">
+            <h3 className="text-lg font-bold group-hover:text-indigo-600 transition-colors">
               {job.title}
             </h3>
-            <span className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded">
+            <span className="px-3 py-1.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
               {job.job_type}
             </span>
           </div>
-          <div className="text-gray-700 mt-1">{job.company?.name}</div>
-          <div className="text-gray-500 text-sm mt-1">
-            {job.location} • {job.category?.name}
+          <div className="text-gray-700 mt-2 flex items-center">
+            <Building2 className="w-4 h-4 mr-2" />
+            {job.company?.name}
+          </div>
+          <div className="text-gray-500 text-sm mt-2 flex items-center">
+            <MapPin className="w-4 h-4 mr-2" />
+            {job.location} • 
+            <Tag className="w-4 h-4 mx-2" />
+            {job.category?.name}
           </div>
           <div className="mt-2 text-sm">{job.description.slice(0, 120)}...</div>
         </div>
@@ -223,33 +235,8 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
             </div>
           )}
         </div>
-      </CardContent>
-
-      {/* Update JobDetailsDialog */}
-      <JobDetailsDialog
-        job={job}
-        isOpen={showJobDetails}
-        onClose={() => setShowJobDetails(false)}
-        onApply={() => {
-          if (!hasApplied) {
-            setShowApplyModal(true);
-          }
-        }}
-        hasApplied={hasApplied}
-      />
-
-      {/* Existing Apply Modal */}
-      {showApplyModal && (
-        <ApplyJobModal
-          jobId={job.id}
-          isOpen={showApplyModal}
-          onClose={() => setShowApplyModal(false)}
-          onSuccess={() => {
-            onApply?.();
-            setShowApplyModal(false);
-          }}
-        />
-      )}
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

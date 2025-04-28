@@ -12,6 +12,7 @@ import JobDetailsDialog from "@/components/job/JobDetailsDialog";
 import { JobItem } from "@/components/job/JobCard";
 import ApplyJobModal from "@/components/job/ApplyJobModal";
 import { BookmarkCheck } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function JobSeekerDashboard() {
   const [userData, setUserData] = useState<any>(null);
@@ -279,185 +280,211 @@ export default function JobSeekerDashboard() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 px-4">
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Welcome, {userData?.user_metadata?.full_name || 'Job Seeker'}!
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {profileData?.title || 'Complete your profile to start your journey'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Left Column - Profile and Stats */}
-        <div className="md:col-span-2">
-          {isLoading ? (
-            <Card className="mb-6 p-6">
-              <div className="animate-pulse flex space-x-4">
-                <div className="flex-1 space-y-4 py-1">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ) : profileData ? (
-            <ProfileCard 
-              profile={profileData} 
-              onEdit={() => {}} // Empty function since we're not using the edit button
-            />
-          ) : (
-            <Card className="mb-6 p-6">
-              <p className="text-center text-gray-500">
-                Complete your profile to increase your chances of getting hired
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="grid gap-6 md:gap-8">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome, {userData?.user_metadata?.full_name || 'Job Seeker'}!
+              </h1>
+              <p className="text-gray-600 mt-2">
+                {profileData?.title || 'Complete your profile to start your journey'}
               </p>
-              <Button 
-                onClick={() => setShowProfileForm(true)}
-                className="mt-4 w-full"
-              >
-                Create Profile
-              </Button>
-            </Card>
-          )}
+            </div>
+          </div>
+        </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Recent Applications</h2>
-              {recentApplications.length === 0 ? (
-                <p className="text-gray-500">No applications yet. Start applying to jobs!</p>
-              ) : (
-                <div className="space-y-4">
-                  {recentApplications.map((application) => (
-                    <div 
-                      key={application.id} 
-                      className="border-b pb-4 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
-                      onClick={() => {
-                        setSelectedJob({
-                          ...application.jobs,
-                          applicationId: application.id,
-                          applicationStatus: application.status
-                        });
-                        setShowJobDetails(true);
-                      }}
-                    >
-                      <h3 className="font-medium">{application.jobs.title}</h3>
-                      <p className="text-sm text-gray-600">{application.jobs.company.name}</p>
-                      <div className="flex justify-between items-center">
-                        <p className="text-xs text-gray-500">
-                          Applied on: {new Date(application.created_at).toLocaleDateString()}
-                          {application.updated_at && application.updated_at !== application.created_at && (
-                            <span className="ml-2">
-                              • Updated: {new Date(application.updated_at).toLocaleDateString()}
-                            </span>
-                          )}
-                        </p>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          application.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                          application.status === 'accepted' ? 'bg-green-100 text-green-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
-                          {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                        </span>
+        {/* Main Content */}
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Left Column - Profile and Applications */}
+          <div className="md:col-span-2">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              {isLoading ? (
+                <Card className="mb-6 p-6">
+                  <div className="animate-pulse flex space-x-4">
+                    <div className="flex-1 space-y-4 py-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Saved Jobs</h2>
-              {savedJobs.length === 0 ? (
-                <p className="text-gray-500">No saved jobs yet. Browse jobs and save the ones you like!</p>
+                  </div>
+                </Card>
+              ) : profileData ? (
+                <ProfileCard 
+                  profile={profileData} 
+                  onEdit={() => {}} // Empty function since we're not using the edit button
+                />
               ) : (
-                <div className="space-y-4">
-                  {savedJobs.map((saved) => (
-                    <div 
-                      key={saved.id} 
-                      className="border-b pb-4"
-                    >
-                      <div 
-                        className="cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
-                        onClick={async () => {
-                          const applicationData = await checkIfJobApplied(saved.jobs.id);
-                          setSelectedJob({
-                            ...saved.jobs,
-                            applicationId: applicationData?.id,
-                            applicationStatus: applicationData?.status
-                          });
-                          setShowJobDetails(true);
-                        }}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium">{saved.jobs.title}</h3>
-                            <p className="text-sm text-gray-600">{saved.jobs.company.name}</p>
+                <Card className="mb-6 p-6">
+                  <p className="text-center text-gray-500">
+                    Complete your profile to increase your chances of getting hired
+                  </p>
+                  <Button 
+                    onClick={() => setShowProfileForm(true)}
+                    className="mt-4 w-full"
+                  >
+                    Create Profile
+                  </Button>
+                </Card>
+              )}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">Recent Applications</h2>
+                  {recentApplications.length === 0 ? (
+                    <p className="text-gray-500">No applications yet. Start applying to jobs!</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentApplications.map((application) => (
+                        <div 
+                          key={application.id} 
+                          className="border-b pb-4 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                          onClick={() => {
+                            setSelectedJob({
+                              ...application.jobs,
+                              applicationId: application.id,
+                              applicationStatus: application.status
+                            });
+                            setShowJobDetails(true);
+                          }}
+                        >
+                          <h3 className="font-medium">{application.jobs.title}</h3>
+                          <p className="text-sm text-gray-600">{application.jobs.company.name}</p>
+                          <div className="flex justify-between items-center">
                             <p className="text-xs text-gray-500">
-                              Saved on: {new Date(saved.created_at).toLocaleDateString()}
+                              Applied on: {new Date(application.created_at).toLocaleDateString()}
+                              {application.updated_at && application.updated_at !== application.created_at && (
+                                <span className="ml-2">
+                                  • Updated: {new Date(application.updated_at).toLocaleDateString()}
+                                </span>
+                              )}
                             </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleUnsaveJob(saved.id);
-                              }}
-                            >
-                              <BookmarkCheck className="w-4 h-4 text-indigo-600" />
-                            </Button>
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              application.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              application.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                            </span>
                           </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </Card>
+                  )}
+                </Card>
+
+                <Card className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">Saved Jobs</h2>
+                  {savedJobs.length === 0 ? (
+                    <p className="text-gray-500">No saved jobs yet. Browse jobs and save the ones you like!</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {savedJobs.map((saved) => (
+                        <div 
+                          key={saved.id} 
+                          className="border-b pb-4"
+                        >
+                          <div 
+                            className="cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
+                            onClick={async () => {
+                              const applicationData = await checkIfJobApplied(saved.jobs.id);
+                              setSelectedJob({
+                                ...saved.jobs,
+                                applicationId: applicationData?.id,
+                                applicationStatus: applicationData?.status
+                              });
+                              setShowJobDetails(true);
+                            }}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-medium">{saved.jobs.title}</h3>
+                                <p className="text-sm text-gray-600">{saved.jobs.company.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  Saved on: {new Date(saved.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUnsaveJob(saved.id);
+                                  }}
+                                >
+                                  <BookmarkCheck className="w-4 h-4 text-indigo-600" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              </div>
+            </motion.div>
           </div>
-        </div>
 
-        {/* Right Column - Quick Actions */}
-        <div>
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-            <div className="space-y-4">
-              <Link to="/jobs">
-                <Button className="w-full mb-3">
-                  Browse Latest Jobs
-                </Button>
-              </Link>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => setShowProfileForm(true)}
-              >
-                Update Profile
-              </Button>
-            </div>
-          </Card>
+          {/* Right Column - Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            <div>
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+                <div className="space-y-4">
+                  <Link to="/jobs">
+                    <Button className="w-full mb-3">
+                      Browse Latest Jobs
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setShowProfileForm(true)}
+                  >
+                    Update Profile
+                  </Button>
+                </div>
+              </Card>
 
-          <Card className="p-6 mt-6">
-            <h2 className="text-xl font-semibold mb-4">Your Stats</h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Applications Submitted</span>
-                <span className="font-semibold">{recentApplications.length}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Saved Jobs</span>
-                <span className="font-semibold">{savedJobs.length}</span>
-              </div>
+              <Card className="p-6 mt-6">
+                <h2 className="text-xl font-semibold mb-4">Your Stats</h2>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Applications Submitted</span>
+                    <span className="font-semibold">{recentApplications.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Saved Jobs</span>
+                    <span className="font-semibold">{savedJobs.length}</span>
+                  </div>
+                </div>
+              </Card>
             </div>
-          </Card>
+          </motion.div>
         </div>
       </div>
 

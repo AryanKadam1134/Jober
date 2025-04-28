@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner"; // Add this import
+import { motion } from "framer-motion";
 
 type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
 
@@ -192,100 +193,139 @@ export default function EmployerDashboard() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome, {userData?.user_metadata?.full_name || 'Employer'}!
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Manage your job postings and applications
-          </p>
-        </div>
-        <Button 
-          onClick={() => setShowJobForm(v => !v)}
-          className="bg-indigo-600 hover:bg-indigo-700"
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="grid gap-6 md:gap-8">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
         >
-          {showJobForm ? "Hide Form" : "Post New Job"}
-        </Button>
-      </div>
-
-      {showJobForm && (
-        <Card className="mb-8 p-6">
-          <h2 className="text-xl font-semibold mb-4">Create New Job Posting</h2>
-          <JobForm onSuccess={() => setShowJobForm(false)} />
-        </Card>
-      )}
-
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-700">Total Jobs</h3>
-          <p className="text-3xl font-bold text-indigo-600 mt-2">{jobStats.total}</p>
-        </Card>
-        
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-700">Active Listings</h3>
-          <p className="text-3xl font-bold text-green-600 mt-2">{jobStats.active}</p>
-        </Card>
-        
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-700">Total Applications</h3>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{jobStats.applications}</p>
-        </Card>
-      </div>
-
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Your Job Listings</h2>
-        <JobList canApply={false} />
-      </Card>
-
-      <Card className="p-6 mt-6">
-        <h2 className="text-xl font-semibold mb-4">Applications</h2>
-        <div className="space-y-6">
-          {applications.map((application) => (
-            <div 
-              key={application.id} 
-              className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <h3 className="font-medium text-lg">
-                    {application.applicant.full_name}
-                  </h3>
-                  <p className="text-gray-600">{application.applicant.title}</p>
-                  <p className="text-sm text-gray-500">
-                    Applied for: {application.jobs.title}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Applied on: {new Date(application.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <select
-                    className="text-sm border rounded px-2 py-1"
-                    value={application.status}
-                    onChange={(e) => updateApplicationStatus(application.id, e.target.value as ApplicationStatus)}
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="accepted">Accepted</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedApplicant(application);
-                      setShowApplicantDetails(true);
-                    }}
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome, {userData?.user_metadata?.full_name || 'Employer'}!
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Manage your job postings and applications
+              </p>
             </div>
-          ))}
+            <Button 
+              onClick={() => setShowJobForm(v => !v)}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              {showJobForm ? "Hide Form" : "Post New Job"}
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-700">Total Jobs</h3>
+              <p className="text-3xl font-bold text-indigo-600 mt-2">{jobStats.total}</p>
+            </Card>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-700">Active Listings</h3>
+              <p className="text-3xl font-bold text-green-600 mt-2">{jobStats.active}</p>
+            </Card>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-700">Total Applications</h3>
+              <p className="text-3xl font-bold text-blue-600 mt-2">{jobStats.applications}</p>
+            </Card>
+          </motion.div>
         </div>
-      </Card>
+
+        {/* Main Content */}
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="md:col-span-3">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.4 }}
+            >
+              {showJobForm && (
+                <Card className="mb-8 p-6">
+                  <h2 className="text-xl font-semibold mb-4">Create New Job Posting</h2>
+                  <JobForm onSuccess={() => setShowJobForm(false)} />
+                </Card>
+              )}
+
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Your Job Listings</h2>
+                <JobList canApply={false} />
+              </Card>
+
+              <Card className="p-6 mt-6">
+                <h2 className="text-xl font-semibold mb-4">Applications</h2>
+                <div className="space-y-6">
+                  {applications.map((application) => (
+                    <div 
+                      key={application.id} 
+                      className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <h3 className="font-medium text-lg">
+                            {application.applicant.full_name}
+                          </h3>
+                          <p className="text-gray-600">{application.applicant.title}</p>
+                          <p className="text-sm text-gray-500">
+                            Applied for: {application.jobs.title}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Applied on: {new Date(application.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <select
+                            className="text-sm border rounded px-2 py-1"
+                            value={application.status}
+                            onChange={(e) => updateApplicationStatus(application.id, e.target.value as ApplicationStatus)}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="rejected">Rejected</option>
+                          </select>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedApplicant(application);
+                              setShowApplicantDetails(true);
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </div>
 
       {/* Applicant Details Modal */}
       {selectedApplicant && (

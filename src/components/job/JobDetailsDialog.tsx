@@ -2,6 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { JobItem } from "./JobCard";
 import { formatCurrency } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { Building2, MapPin, Clock } from "lucide-react";
 
 interface JobDetailsDialogProps {
   job: JobItem;
@@ -27,49 +29,61 @@ export default function JobDetailsDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{job.title}</DialogTitle>
-        </DialogHeader>
-        
-        <div className="mt-4 space-y-4">
-          <div className="flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <DialogHeader className="space-y-4">
+            <DialogTitle className="text-2xl font-bold text-indigo-700">
+              {job.title}
+            </DialogTitle>
+            <div className="flex flex-wrap gap-4 items-center text-gray-600">
+              <div className="flex items-center">
+                <Building2 className="w-5 h-5 mr-2" />
+                {job.company?.name}
+              </div>
+              <div className="flex items-center">
+                <MapPin className="w-5 h-5 mr-2" />
+                {job.location}
+              </div>
+              <div className="flex items-center">
+                <Clock className="w-5 h-5 mr-2" />
+                {job.job_type}
+              </div>
+            </div>
+          </DialogHeader>
+          
+          <div className="mt-4 space-y-4">
             <div>
-              <p className="text-lg font-semibold">{job.company?.name}</p>
-              <p className="text-gray-600">{job.location}</p>
+              <h3 className="font-semibold mb-2">Salary Range</h3>
+              <p className="text-gray-700">
+                {job.salary_min && job.salary_max 
+                  ? `${formatCurrency(job.salary_min)} - ${formatCurrency(job.salary_max)}`
+                  : "Salary not specified"}
+              </p>
             </div>
-            <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
-              {job.job_type}
-            </span>
-          </div>
 
-          <div>
-            <h3 className="font-semibold mb-2">Salary Range</h3>
-            <p className="text-gray-700">
-              {job.salary_min && job.salary_max 
-                ? `${formatCurrency(job.salary_min)} - ${formatCurrency(job.salary_max)}`
-                : "Salary not specified"}
-            </p>
-          </div>
+            <div>
+              <h3 className="font-semibold mb-2">Category</h3>
+              <p className="text-gray-700">{job.category?.name}</p>
+            </div>
 
-          <div>
-            <h3 className="font-semibold mb-2">Category</h3>
-            <p className="text-gray-700">{job.category?.name}</p>
-          </div>
+            <div>
+              <h3 className="font-semibold mb-2">Description</h3>
+              <div className="prose max-w-none text-gray-700">
+                {job.description}
+              </div>
+            </div>
 
-          <div>
-            <h3 className="font-semibold mb-2">Description</h3>
-            <div className="prose max-w-none text-gray-700">
-              {job.description}
+            <div>
+              <h3 className="font-semibold mb-2">Application Deadline</h3>
+              <p className="text-gray-700">
+                {new Date(job.deadline).toLocaleDateString()}
+              </p>
             </div>
           </div>
-
-          <div>
-            <h3 className="font-semibold mb-2">Application Deadline</h3>
-            <p className="text-gray-700">
-              {new Date(job.deadline).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
+        </motion.div>
 
         <div className="mt-6 flex justify-end gap-3">
           {applicationStatus ? (
