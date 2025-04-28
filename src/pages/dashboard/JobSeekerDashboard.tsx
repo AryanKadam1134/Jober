@@ -311,7 +311,7 @@ export default function JobSeekerDashboard() {
           ) : profileData ? (
             <ProfileCard 
               profile={profileData} 
-              onEdit={() => setShowProfileForm(true)}
+              onEdit={() => {}} // Empty function since we're not using the edit button
             />
           ) : (
             <Card className="mb-6 p-6">

@@ -84,8 +84,8 @@ export default function EmployerDashboard() {
     fetchJobStats();
     fetchApplications();
 
-    // Set up real-time subscription for application updates
-    const setupSubscription = async () => {
+    // Set up real-time subscription for jobs
+    const setupJobsSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -98,26 +98,18 @@ export default function EmployerDashboard() {
       if (!company) return;
 
       const subscription = supabase
-        .channel('employer-application-updates')
+        .channel('jobs-changes')
         .on(
           'postgres_changes',
           {
-            event: 'UPDATE',
+            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
             schema: 'public',
-            table: 'applications',
-            filter: `jobs.company_id=eq.${company.id}`
+            table: 'jobs',
+            filter: `company_id=eq.${company.id}`
           },
-          (payload) => {
-            // Update the application in the local state
-            setApplications(prev => 
-              prev.map(app => 
-                app.id === payload.new.id 
-                  ? { ...app, status: payload.new.status, updated_at: payload.new.updated_at }
-                  : app
-              )
-            );
-
-            toast.success(`Application status updated to ${payload.new.status}`);
+          () => {
+            // Refresh job stats when any change occurs
+            fetchJobStats();
           }
         )
         .subscribe();
@@ -125,15 +117,15 @@ export default function EmployerDashboard() {
       return subscription;
     };
 
-    let subscription: any;
-    setupSubscription().then(sub => {
-      subscription = sub;
+    let jobsSubscription: any;
+    setupJobsSubscription().then(sub => {
+      jobsSubscription = sub;
     });
 
-    // Cleanup subscription
+    // Cleanup subscriptions
     return () => {
-      if (subscription) {
-        subscription.unsubscribe();
+      if (jobsSubscription) {
+        jobsSubscription.unsubscribe();
       }
     };
   }, []);
@@ -166,13 +158,37 @@ export default function EmployerDashboard() {
   };
 
   const fetchJobStats = async () => {
-    // This would be replaced with actual data fetching from Supabase
-    // Placeholder for now
-    setJobStats({
-      total: 0,
-      active: 0,
-      applications: 0
-    });
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: company } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!company) return;
+
+      // Get total jobs count
+      const { data: jobsData, error: jobsError } = await supabase
+        .from('jobs')
+        .select('id, is_active', { count: 'exact' })
+        .eq('company_id', company.id);
+
+      if (jobsError) throw jobsError;
+
+      const total = jobsData?.length || 0;
+      const active = jobsData?.filter(job => job.is_active)?.length || 0;
+
+      setJobStats(prev => ({
+        ...prev,
+        total,
+        active
+      }));
+    } catch (error) {
+      console.error("Error fetching job stats:", error);
+    }
   };
 
   return (

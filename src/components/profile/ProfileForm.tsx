@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { X } from "lucide-react"; // Add this import for the remove icon
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -122,10 +123,32 @@ export default function ProfileForm({ initialData, onSuccess }: ProfileFormProps
     }
   };
 
+  // Add this function to handle adding skills
+  const handleSkillInput = (value: string) => {
+    if (value.endsWith(',')) {
+      const newSkill = value.slice(0, -1).trim();
+      if (newSkill && !formData.skills.includes(newSkill)) {
+        setFormData(prev => ({
+          ...prev,
+          skills: [...prev.skills, newSkill]
+        }));
+      }
+      return '';
+    }
+    return value;
+  };
+
+  // Add this function to remove skills
+  const removeSkill = (skillToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
+    }));
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4">
-        {/* Basic Information */}
         <Card className="p-4">
           <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
           <div className="grid gap-4">
@@ -152,14 +175,50 @@ export default function ProfileForm({ initialData, onSuccess }: ProfileFormProps
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Skills</label>
-                <Input
-                  value={formData.skills.join(", ")}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    skills: e.target.value.split(",").map(s => s.trim()).filter(Boolean)
-                  }))}
-                  placeholder="e.g. React, TypeScript"
-                />
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-full text-sm"
+                      >
+                        {skill}
+                        <button
+                          type="button"
+                          onClick={() => removeSkill(skill)}
+                          className="hover:text-indigo-800"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <Input
+                    placeholder="Type a skill and press comma to add"
+                    onChange={(e) => {
+                      const newValue = handleSkillInput(e.target.value);
+                      if (newValue !== undefined) {
+                        e.target.value = newValue;
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const value = (e.target as HTMLInputElement).value.trim();
+                        if (value && !formData.skills.includes(value)) {
+                          setFormData(prev => ({
+                            ...prev,
+                            skills: [...prev.skills, value]
+                          }));
+                          (e.target as HTMLInputElement).value = '';
+                        }
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Press comma or Enter to add a skill. Click on a skill to remove it.
+                  </p>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Location</label>
