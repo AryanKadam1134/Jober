@@ -1,73 +1,88 @@
-# Welcome to your Lovable project
+# Talent Hub - Job Portal Platform
 
-## Project info
+## Overview
+Talent Hub is a modern job portal platform built with React and TypeScript, designed to connect employers with job seekers. The platform offers a seamless experience for both employers to post jobs and manage applications, and for job seekers to find and apply for positions matching their skills.
 
-**URL**: https://lovable.dev/projects/d8b16112-bd74-4af8-89a7-3503e1dc560e
+## Key Features
 
-## How can I edit this code?
+### For Employers
+- Post and manage job listings
+- Track application statistics
+- Review candidate applications
+- Real-time application status updates
+- Detailed applicant profiles
+- Application management workflow
 
-There are several ways of editing your application.
+### For Job Seekers
+- Create and manage professional profiles
+- Search and filter job listings
+- Save interesting jobs
+- Easy job application process
+- Track application status
+- Withdraw applications
+- Resume and cover letter management
 
-**Use Lovable**
+## Technology Stack
+- **Frontend**: React, TypeScript
+- **UI Framework**: Tailwind CSS, shadcn-ui
+- **Build Tool**: Vite
+- **Database**: Supabase
+- **Authentication**: Supabase Auth
+- **File Storage**: Supabase Storage
+- **Real-time Updates**: Supabase Realtime
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d8b16112-bd74-4af8-89a7-3503e1dc560e) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
+- Node.js (v16 or higher)
+- npm (v7 or higher)
+- Git
 
-**Use your preferred IDE**
+### Installation Steps
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/talent-hub.git
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install dependencies
+```bash
+npm install
+```
 
-Follow these steps:
+3. Configure environment variables
+Create a `.env` file in the root directory and add the following:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Start the development server
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Project Structure
+```
+talent-hub/
+├── src/
+│   ├── components/        # Reusable UI components
+│   ├── pages/            # Page components
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Utility functions
+│   ├── types/            # TypeScript type definitions
+│   └── integrations/     # Third-party integrations
+├── public/               # Static assets
+└── ...config files
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Available Scripts
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
 
-**Use GitHub Codespaces**
+## Deployment
+The application can be deployed to any static hosting service. We recommend:
+- Vercel
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/d8b16112-bd74-4af8-89a7-3503e1dc560e) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## License
+This project is licensed under the MIT License - see the LICENSE file for details
