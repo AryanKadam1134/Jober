@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import JobForm from "./JobForm";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import ApplyJobModal from "./ApplyJobModal"; // Add this import
 
 type Props = {
   canApply?: boolean;
@@ -22,6 +23,8 @@ export default function JobList({ canApply = true }: Props) {
   const [loading, setLoading] = useState(false);
   const [editingJob, setEditingJob] = useState<JobItem | null>(null);
   const { role } = useAuth();
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -68,6 +71,15 @@ export default function JobList({ canApply = true }: Props) {
     toast.success("Job updated successfully!");
   };
 
+  // Add this function to handle successful application
+  const handleApplicationSuccess = async () => {
+    setShowApplyModal(false);
+    setSelectedJob(null);
+    toast.success("Application submitted successfully!");
+    // Optionally refresh the jobs list
+    await fetchJobs();
+  };
+
   return (
     <div>
       <div className="flex flex-wrap gap-2 mb-5">
@@ -94,11 +106,27 @@ export default function JobList({ canApply = true }: Props) {
         <JobCard 
           key={job.id} 
           job={job}
-          onApply={() => {/* open apply modal later */}}
+          onApply={canApply ? () => {
+            setSelectedJob(job);
+            setShowApplyModal(true);
+          } : undefined}
           onEdit={() => handleEdit(job)}
-          showActions={true}
+          showActions={canApply}
         />
       ))}
+
+      {/* Only render ApplyJobModal if canApply is true */}
+      {canApply && selectedJob && (
+        <ApplyJobModal
+          jobId={selectedJob.id}
+          isOpen={showApplyModal}
+          onClose={() => {
+            setShowApplyModal(false);
+            setSelectedJob(null);
+          }}
+          onSuccess={handleApplicationSuccess}
+        />
+      )}
 
       <Dialog open={!!editingJob} onOpenChange={() => setEditingJob(null)}>
         <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0">

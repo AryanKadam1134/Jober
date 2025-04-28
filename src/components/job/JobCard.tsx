@@ -157,6 +157,15 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
     }
   };
 
+  const handleApplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!hasApplied) {
+      onApply?.(); // Call the onApply callback provided by JobList
+    } else {
+      toast.error("You have already applied for this position");
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -166,77 +175,83 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
       <Card className="mb-4 hover-card border-l-4 border-l-indigo-500">
         <CardContent className="p-5">
           <div className="cursor-pointer" onClick={() => setShowJobDetails(true)}>
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold group-hover:text-indigo-600 transition-colors">
-              {job.title}
-            </h3>
-            <span className="px-3 py-1.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
-              {job.job_type}
-            </span>
-          </div>
-          <div className="text-gray-700 mt-2 flex items-center">
-            <Building2 className="w-4 h-4 mr-2" />
-            {job.company?.name}
-          </div>
-          <div className="text-gray-500 text-sm mt-2 flex items-center">
-            <MapPin className="w-4 h-4 mr-2" />
-            {job.location} • 
-            <Tag className="w-4 h-4 mx-2" />
-            {job.category?.name}
-          </div>
-          <div className="mt-2 text-sm">{job.description.slice(0, 120)}...</div>
-        </div>
-
-        <div className="flex justify-between items-center mt-3">
-          <div className="text-xs text-gray-600">
-            {job.salary_min !== null && job.salary_max !== null
-              ? `$${job.salary_min} - $${job.salary_max}`
-              : "Salary not specified"}
-          </div>
-          {showActions && (
-            <div className="flex gap-2">
-              {isEmployer && isOwner ? (
-                <Button size="sm" variant="secondary" onClick={onEdit}>
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-              ) : !isEmployer && (
-                <>
-                  <Button 
-                    size="sm" 
-                    variant="secondary" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!hasApplied) {
-                        setShowApplyModal(true);
-                      } else {
-                        toast.error("You have already applied for this position");
-                      }
-                    }}
-                    disabled={hasApplied}
-                  >
-                    {hasApplied ? 'Applied' : 'Apply'}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSave();
-                    }}
-                  >
-                    {isSaved ? 
-                      <BookmarkCheck className="w-4 h-4 text-indigo-600" /> : 
-                      <Bookmark className="w-4 h-4" />
-                    }
-                  </Button>
-                </>
-              )}
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold group-hover:text-indigo-600 transition-colors">
+                {job.title}
+              </h3>
+              <span className="px-3 py-1.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
+                {job.job_type}
+              </span>
             </div>
-          )}
-        </div>
+            <div className="text-gray-700 mt-2 flex items-center">
+              <Building2 className="w-4 h-4 mr-2" />
+              {job.company?.name}
+            </div>
+            <div className="text-gray-500 text-sm mt-2 flex items-center">
+              <MapPin className="w-4 h-4 mr-2" />
+              {job.location} • 
+              <Tag className="w-4 h-4 mx-2" />
+              {job.category?.name}
+            </div>
+            <div className="mt-2 text-sm">{job.description.slice(0, 120)}...</div>
+          </div>
+
+          <div className="flex justify-between items-center mt-3">
+            <div className="text-xs text-gray-600">
+              {job.salary_min !== null && job.salary_max !== null
+                ? `$${job.salary_min} - $${job.salary_max}`
+                : "Salary not specified"}
+            </div>
+            {showActions && (
+              <div className="flex gap-2">
+                {isEmployer && isOwner ? (
+                  <Button size="sm" variant="secondary" onClick={onEdit}>
+                    <Edit className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                ) : !isEmployer && (
+                  <>
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      onClick={handleApplyClick}
+                      disabled={hasApplied}
+                    >
+                      {hasApplied ? 'Applied' : 'Apply'}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSave();
+                      }}
+                    >
+                      {isSaved ? 
+                        <BookmarkCheck className="w-4 h-4 text-indigo-600" /> : 
+                        <Bookmark className="w-4 h-4" />
+                      }
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      {/* Only show JobDetailsDialog if not an employer */}
+      {!isEmployer && showJobDetails && (
+        <JobDetailsDialog
+          job={job}
+          isOpen={showJobDetails}
+          onClose={() => setShowJobDetails(false)}
+          onApply={onApply}
+          applicationStatus={applicationStatus}
+          hasApplied={hasApplied}
+          showApplyButton={!hasApplied}
+        />
+      )}
     </motion.div>
   );
 }
