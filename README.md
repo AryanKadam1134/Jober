@@ -84,5 +84,3 @@ talent-hub/
 The application can be deployed to any static hosting service. We recommend:
 - Vercel
 
-## License
-This project is licensed under the MIT License - see the LICENSE file for details
