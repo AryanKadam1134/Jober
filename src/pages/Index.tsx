@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -13,23 +12,23 @@ const Index = () => {
         <div className="grid md:grid-cols-2 gap-6 mb-12">
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-semibold mb-3 text-indigo-700">Job Seekers</h2>
-            <p className="text-gray-600 mb-4">Browse thousands of job listings and apply with a single click.</p>
+            <p className="text-gray-600 mb-4">Create your profile and start applying to jobs.</p>
             <Link 
               to="/auth" 
               className="block w-full bg-indigo-600 text-white px-6 py-3 rounded-md shadow hover:bg-indigo-700 font-semibold transition"
             >
-              Find a Job
+              Sign Up Now
             </Link>
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-semibold mb-3 text-indigo-700">Employers</h2>
-            <p className="text-gray-600 mb-4">Post jobs and find the perfect candidates for your open positions.</p>
+            <p className="text-gray-600 mb-4">Post jobs and find the perfect candidates for your positions.</p>
             <Link 
               to="/auth" 
               className="block w-full bg-indigo-600 text-white px-6 py-3 rounded-md shadow hover:bg-indigo-700 font-semibold transition"
             >
-              Post a Job
+              Start Hiring
             </Link>
           </div>
         </div>

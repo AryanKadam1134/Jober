@@ -33,7 +33,7 @@ export default function JobList({ canApply = true }: Props) {
       const data = await getJobs({ query, category, location, jobType, salary });
       
       if (role === "employer" && user) {
-        // Fetch employer's company ID
+        // Fetch employer's company ID to check ownership
         const { data: company } = await supabase
           .from('companies')
           .select('id')
@@ -41,10 +41,13 @@ export default function JobList({ canApply = true }: Props) {
           .single();
           
         if (company) {
-          // Filter jobs to show only those owned by the employer
-          setJobs(data.filter((job: JobItem) => job.company_id === company.id));
+          // Set all jobs but mark which ones are owned by the employer
+          setJobs(data.map((job: JobItem) => ({
+            ...job,
+            isOwner: job.company_id === company.id
+          })));
         } else {
-          setJobs([]);
+          setJobs(data);
         }
       } else {
         setJobs(data);
@@ -110,8 +113,9 @@ export default function JobList({ canApply = true }: Props) {
             setSelectedJob(job);
             setShowApplyModal(true);
           } : undefined}
-          onEdit={() => handleEdit(job)}
-          showActions={canApply}
+          onEdit={job.isOwner ? () => handleEdit(job) : undefined}
+          showActions={true}
+          isOwner={job.isOwner}
         />
       ))}
 

@@ -27,7 +27,15 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/jobs" element={<JobsPage />} />
+            {/* Make jobs route protected */}
+            <Route 
+              path="/jobs" 
+              element={
+                <ProtectedRoute>
+                  <JobsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route 
               path="/dashboard/*" 
               element={

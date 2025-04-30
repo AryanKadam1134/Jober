@@ -33,37 +33,21 @@ type Props = {
   onBookmark?: () => void;
   onEdit?: () => void;
   showActions?: boolean;
+  isOwner?: boolean;
 };
 
-export default function JobCard({ job, onApply, onBookmark, onEdit, showActions = true }: Props) {
+export default function JobCard({ job, onApply, onBookmark, onEdit, showActions = true, isOwner = false }: Props) {
   const { role } = useAuth();
-  const [isOwner, setIsOwner] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [showApplyModal, setShowApplyModal] = useState(false);
   const [showJobDetails, setShowJobDetails] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
   const isEmployer = role === "employer";
 
   useEffect(() => {
-    checkOwnership();
     checkIfSaved();
     checkIfApplied();
   }, [job.id]);
-
-  const checkOwnership = async () => {
-    if (!isEmployer) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: company } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('owner_id', user.id)
-      .single();
-
-    setIsOwner(company?.id === job.company_id);
-  };
 
   const checkIfSaved = async () => {
     if (isEmployer) return;
@@ -204,12 +188,14 @@ export default function JobCard({ job, onApply, onBookmark, onEdit, showActions 
             </div>
             {showActions && (
               <div className="flex gap-2">
-                {isEmployer && isOwner ? (
-                  <Button size="sm" variant="secondary" onClick={onEdit}>
-                    <Edit className="w-4 h-4 mr-1" />
-                    Edit
-                  </Button>
-                ) : !isEmployer && (
+                {isEmployer ? (
+                  isOwner && (
+                    <Button size="sm" variant="secondary" onClick={onEdit}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                  )
+                ) : (
                   <>
                     <Button 
                       size="sm" 

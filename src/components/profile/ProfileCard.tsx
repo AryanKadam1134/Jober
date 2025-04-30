@@ -102,7 +102,7 @@ export default function ProfileCard({ profile, onEdit }: ProfileCardProps) {
                 href={profile.resume_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center text-indigo-600 hover:text-indigo-800"
+                className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
               >
                 <Link className="w-4 h-4 mr-2" />
                 View Resume
@@ -113,7 +113,7 @@ export default function ProfileCard({ profile, onEdit }: ProfileCardProps) {
                 href={profile.linkedin_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center text-indigo-600 hover:text-indigo-800"
+                className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
               >
                 <Link className="w-4 h-4 mr-2" />
                 LinkedIn Profile
@@ -124,7 +124,7 @@ export default function ProfileCard({ profile, onEdit }: ProfileCardProps) {
                 href={profile.github_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center text-indigo-600 hover:text-indigo-800"
+                className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
               >
                 <Link className="w-4 h-4 mr-2" />
                 GitHub Profile
@@ -135,7 +135,7 @@ export default function ProfileCard({ profile, onEdit }: ProfileCardProps) {
                 href={profile.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center text-indigo-600 hover:text-indigo-800"
+                className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
               >
                 <Link className="w-4 h-4 mr-2" />
                 Personal Website

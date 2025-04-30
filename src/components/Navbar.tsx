@@ -30,24 +30,26 @@ export default function Navbar() {
         Jober
       </Link>
 
-      {/* Navigation Links */}
-      <div className="ml-8 space-x-4">
-        <Link
-          to="/jobs"
-          className="text-sm text-gray-600 hover:text-indigo-600"
-        >
-          Browse Jobs
-        </Link>
-        
-        {role === "employer" && (
+      {/* Navigation Links - Only show for authenticated users */}
+      {role && (
+        <div className="ml-8 space-x-4">
           <Link
-            to="/dashboard"
+            to="/jobs"
             className="text-sm text-gray-600 hover:text-indigo-600"
           >
-            Post a Job
+            Browse Jobs
           </Link>
-        )}
-      </div>
+          
+          {role === "employer" && (
+            <Link
+              to="/dashboard"
+              className="text-sm text-gray-600 hover:text-indigo-600"
+            >
+              Post a Job
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Auth Buttons */}
       <div className="ml-auto flex items-center gap-4">
