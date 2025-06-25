@@ -1,7 +1,7 @@
-# Talent Hub - Job Portal Platform
+# Jober - Job Portal Platform
 
 ## Overview
-Talent Hub is a modern job portal platform built with React and TypeScript, designed to connect employers with job seekers. The platform offers a seamless experience for both employers to post jobs and manage applications, and for job seekers to find and apply for positions matching their skills.
+Jober is a modern job portal platform built with React and TypeScript, designed to connect employers with job seekers. The platform offers a seamless experience for both employers to post jobs and manage applications, and for job seekers to find and apply for positions matching their skills.
 
 ## Key Features
 
